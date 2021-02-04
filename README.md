@@ -77,11 +77,10 @@ More information on FSD50K can be found in the [paper](https://arxiv.org/pdf/201
 * Try weighted BinaryCrossEntropy to help with the significant label imbalance.
 * Use Focal loss [2] instead of BinaryCrossEntropy
 
+## Acknowledgements
+Special thanks to [Eduardo Fonseca](https://github.com/edufonseca) for answering my queries and a more comprehensive explanation of the baseline protocol in [1].
+
 ## References
 [1] Fonseca, E., Favory, X., Pons, J., Font, F. and Serra, X., 2020. FSD50k: an open dataset of human-labeled sound events. arXiv preprint arXiv:2010.00475.  
 [2] Gemmeke, J.F., Ellis, D.P., Freedman, D., Jansen, A., Lawrence, W., Moore, R.C., Plakal, M. and Ritter, M., 2017, March. Audio set: An ontology and human-labeled dataset for audio events. In 2017 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) (pp. 776-780). IEEE.  
 [3] Lin, T.Y., Goyal, P., Girshick, R., He, K. and Dollár, P., 2017. Focal loss for dense object detection. In Proceedings of the IEEE international conference on computer vision (pp. 2980-2988).
-
-## Acknowledgements
-
-Thanks to implementations 
