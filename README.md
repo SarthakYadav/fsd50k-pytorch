@@ -30,7 +30,7 @@ More information on FSD50K can be found in the [paper](https://arxiv.org/pdf/201
 | Resnet18 | melspectrograms | resnet_chunks_melspec.cfg | 0.373, 1.883 | 0.400, 1.905 | [checkpoint](https://drive.google.com/drive/folders/1kCeth1dXAGa5tGJs1sEOXyWgH5nRunFy?usp=sharing) |
 | VGG-like | melspectrograms | vgglike_chunks_melspec.cfg | 0.434, 2.167 | 0.408, 2.055 | [checkpoint](https://drive.google.com/drive/folders/16lroxqjHoc4-8sbC0y7aZrStQ7cZOs65?usp=sharing) |
 | Resnet18 | spectrograms <br> (length=0.02 ms, stride=0.01 ms) | resnet_chunks.cfg | - | 0.420, 1.946 | [checkpoint](https://drive.google.com/drive/folders/14hOggY4N4ZDcSaCBBVCtcN6zNwvIJC7O?usp=sharing) |
-| VGG-like | spectrograms <br> (length=0.02 ms, stride=0.01 ms) | vgglike_melspec.cfg | - | 0.388, 2.021 | [checkpoint](https://drive.google.com/drive/folders/14e8B6u5Jshi4ku2IXlDdrL6cQ2bmLGbs?usp=sharing) |
+| VGG-like | spectrograms <br> (length=0.02 ms, stride=0.01 ms) | vgglike_chunks.cfg | - | 0.388, 2.021 | [checkpoint](https://drive.google.com/drive/folders/14e8B6u5Jshi4ku2IXlDdrL6cQ2bmLGbs?usp=sharing) |
 
 ## Requirements
 * `torch==1.7.1` and corresponding `torchaudio` from [official pytorch](https://pytorch.org/get-started/locally/)
