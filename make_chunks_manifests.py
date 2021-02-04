@@ -11,7 +11,7 @@ import argparse
 import tqdm
 
 parser = argparse.ArgumentParser()
-parser.description("Script to make experiment manifests")
+parser.description = "Script to make experiment manifests"
 parser.add_argument("--dev_csv", type=str, default=None,
                     help="path to dev.csv file found in FSD50K.ground_truth")
 parser.add_argument("--eval_csv", type=str, default=None,

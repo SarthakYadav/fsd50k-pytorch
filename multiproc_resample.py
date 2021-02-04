@@ -8,7 +8,7 @@ from multiprocessing import Pool
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.description("Multi-processing resampling script")
+parser.description = "Multi-processing resampling script"
 parser.add_argument("--src_path", type=str,
                     help="path to source directory containing .wav files")
 parser.add_argument("--dst_path", type=str,

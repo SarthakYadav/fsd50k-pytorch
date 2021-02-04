@@ -8,7 +8,7 @@ from src.data.transforms import get_transforms_fsd_chunks
 from src.utilities.config_parser import parse_config, get_data_info
 
 parser = argparse.ArgumentParser()
-parser.description("Training script for FSD50k baselines")
+parser.description = "Training script for FSD50k baselines"
 parser.add_argument("--cfg_file", type=str,
                     help='path to cfg file')
 parser.add_argument("--expdir", "-e", type=str,

@@ -8,7 +8,7 @@ from src.data.fsd_eval_dataset import FSD50kEvalDataset, _collate_fn_eval
 from src.utilities.metrics_helper import calculate_stats, d_prime
 
 parser = argparse.ArgumentParser()
-parser.description("Evaluation script for FSD50k Baselines")
+parser.description = "Evaluation script for FSD50k Baselines"
 parser.add_argument("--ckpt_path", type=str,
                     help="path to model .ckpt")
 parser.add_argument("--eval_csv", type=str,

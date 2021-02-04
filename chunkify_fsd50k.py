@@ -13,7 +13,7 @@ import soundfile as sf
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.description("Multiprocessing script for making chunks as per FSD50K guidelines")
+parser.description = "Multiprocessing script for making chunks as per FSD50K guidelines"
 parser.add_argument("--src_dir", "-s", type=str,
                     help="source directory containing .wav files")
 parser.add_argument("--tgt_dir", "-t", type=str,

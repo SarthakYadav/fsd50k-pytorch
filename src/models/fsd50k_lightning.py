@@ -3,6 +3,7 @@ import numpy as np
 from torch import nn
 from src.models import resnet
 from src.models import vgglike
+from src.models import densenet
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 from src.data.dataset import SpectrogramDataset
@@ -14,7 +15,19 @@ from src.data.fsd_eval_dataset import FSD50kEvalDataset, _collate_fn_eval
 def model_helper(opt):
     if opt['arch'] == "vgglike":
         model = vgglike.VGGLike(opt['num_classes'])
-    else:
+    elif "densenet" in opt['arch']:
+        depth = opt['model_depth']
+        if depth == 121:
+            model = densenet.densenet121(num_classes=opt['num_classes'])
+        elif depth == 161:
+            model = densenet.densenet161(num_classes=opt['num_classes'])
+        elif depth == 169:
+            model = densenet.densenet169(num_classes=opt['num_classes'])
+        elif depth == 201:
+            model = densenet.densenet201(num_classes=opt['num_classes'])
+        else:
+            raise ValueError("Invalid value {} of depth for densenet arch".format(depth))
+    elif "resnet" in opt['arch']:
         assert opt['model_depth'] in [10, 18, 34, 50, 101, 152, 200]
         if opt['model_depth'] == 18:
             model = resnet.resnet18(
@@ -37,6 +50,8 @@ def model_helper(opt):
         elif opt['model_depth'] == 152:
             model = resnet.resnet152(
                 num_classes=opt['num_classes'])
+    else:
+        raise ValueError("Unsupported value {} for opt['arch']".format(opt['arch']))
     return model
 
 
