@@ -1,0 +1,142 @@
+import torch
+import numpy as np
+from torch import nn
+from src.models import resnet
+from src.models import vgglike
+import pytorch_lightning as pl
+from torch.utils.data import DataLoader
+from src.data.dataset import SpectrogramDataset
+from sklearn.metrics import average_precision_score
+from src.data.utils import _collate_fn, _collate_fn_multiclass
+from src.data.fsd_eval_dataset import FSD50kEvalDataset, _collate_fn_eval
+
+
+def model_helper(opt):
+    if opt['arch'] == "vgglike":
+        model = vgglike.VGGLike(opt['num_classes'])
+    else:
+        assert opt['model_depth'] in [10, 18, 34, 50, 101, 152, 200]
+        if opt['model_depth'] == 18:
+            model = resnet.resnet18(
+                num_classes=309,
+                pool=opt['pool'])
+            # model.load_state_dict(torch.load("resnet18_weight.pth"))
+            fc_in = model.fc.in_features
+            model.fc = nn.Linear(fc_in, opt['num_classes'])
+        elif opt['model_depth'] == 34:
+            model = resnet.resnet34(
+                num_classes=opt['num_classes'],
+                pool=opt['pool'])
+        elif opt['model_depth'] == 50:
+            model = resnet.resnet50(
+                num_classes=opt['num_classes'],
+                pool=opt['pool'])
+        elif opt['model_depth'] == 101:
+            model = resnet.resnet101(
+                num_classes=opt['num_classes'])
+        elif opt['model_depth'] == 152:
+            model = resnet.resnet152(
+                num_classes=opt['num_classes'])
+    return model
+
+
+class FSD50k_Lightning(pl.LightningModule):
+    def __init__(self, hparams):
+        super(FSD50k_Lightning, self).__init__()
+        self.hparams = hparams
+        self.net = model_helper(self.hparams.cfg['model'])
+        if self.hparams.cfg['model']['type'] == "multiclass":
+            if self.hparams.cw is not None:
+                print("Class weights found. Training weighted cross-entropy model")
+                cw = torch.load(self.hparams.cw)
+            else:
+                print("Training weighted cross-entropy model")
+                cw = None
+            self.criterion = nn.CrossEntropyLoss(weight=cw)
+            self.mode = "multiclass"
+            self.collate_fn = _collate_fn_multiclass
+        elif self.hparams.cfg['model']['type'] == "multilabel":
+            print("Training multilabel model")
+            self.mode = "multilabel"
+            if self.hparams.cw is not None:
+                cw = torch.load(self.hparams.cw)
+                self.criterion = nn.BCEWithLogitsLoss(pos_weight=cw)
+            else:
+                self.criterion = nn.BCEWithLogitsLoss(self.hparams.cw)
+            self.collate_fn = _collate_fn
+        self.train_set = None
+        self.val_set = None
+
+        self.val_predictions = []
+        self.val_gts = []
+
+    def prepare_data(self) -> None:
+        self.train_set = SpectrogramDataset(self.hparams.cfg['data']['train'],
+                                            self.hparams.cfg['data']['labels'],
+                                            self.hparams.cfg['audio_config'],
+                                            mode=self.mode, augment=True,
+                                            mixer=self.hparams.tr_mixer,
+                                            transform=self.hparams.tr_tfs)
+        self.val_set = FSD50kEvalDataset(self.hparams.cfg['data']['val'], self.hparams.cfg['data']['labels'],
+                                         self.hparams.cfg['audio_config'],
+                                         transform=self.hparams.val_tfs
+                                         )
+
+    def forward(self, x):
+        return self.net(x)
+
+    def training_step(self, batch, batch_step):
+        self.net.zero_grad()
+        x, _, y = batch
+        y_pred = self(x)
+        loss = self.criterion(y_pred, y)
+        self.log("train_loss", loss, prog_bar=True, on_epoch=True)
+        y_pred_sigmoid = torch.sigmoid(y_pred)
+        auc = torch.tensor(average_precision_score(y.detach().cpu().numpy(),
+                                                   y_pred_sigmoid.detach().cpu().numpy(), average="macro"))
+        self.log("train_mAP", auc, prog_bar=True, on_epoch=True)
+        return loss
+
+    def validation_step(self, batch, batch_step):
+        x, y = batch
+        y_pred = self(x)
+        y_pred = y_pred.mean(0).unsqueeze(0)
+        loss = self.criterion(y_pred, y)
+        self.log("val_loss", loss, prog_bar=True, on_epoch=True)
+        y_pred_sigmoid = torch.sigmoid(y_pred)
+        self.val_predictions.append(y_pred_sigmoid.detach().cpu().numpy()[0])
+        self.val_gts.append(y.detach().cpu().numpy()[0])
+        return loss
+
+    def on_validation_epoch_end(self) -> None:
+        val_preds = np.asarray(self.val_predictions).astype('float32')
+        val_gts = np.asarray(self.val_gts).astype('int32')
+        map_value = average_precision_score(val_gts, val_preds, average="macro")
+        self.log("val_mAP", torch.tensor(map_value), prog_bar=True, on_epoch=True)
+        self.val_predictions = []
+        self.val_gts = []
+
+    def configure_optimizers(self):
+        wd = float(self.hparams.cfg['opt'].get("weight_decay", 0))
+        lr = float(self.hparams.cfg['opt'].get("lr", 1e-3))
+        optimizer = torch.optim.Adam(self.parameters(), lr=lr, weight_decay=wd)
+        lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, "max", factor=0.1,
+                                                                  patience=5, verbose=True)
+        to_monitor = "val_mAP" if self.mode == "multilabel" else "val_acc"
+        return {
+            "optimizer": optimizer,
+            "lr_scheduler": lr_scheduler,
+            "monitor": to_monitor
+        }
+
+    def train_dataloader(self):
+        return DataLoader(self.train_set, num_workers=self.hparams.num_workers, shuffle=True,
+                          sampler=None, collate_fn=self.collate_fn,
+                          batch_size=self.hparams.cfg['opt']['batch_size'],
+                          pin_memory=False, drop_last=True)
+
+    def val_dataloader(self):
+        return DataLoader(self.val_set, sampler=None, num_workers=self.hparams.num_workers,
+                          collate_fn=_collate_fn_eval,
+                          shuffle=False, batch_size=1,
+                          pin_memory=False)
