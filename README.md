@@ -1,7 +1,6 @@
 # fsd50k-pytorch
 
-(Unofficial) Implementation [FSD50K](https://arxiv.org/pdf/2010.00475.pdf) [1] baselines for pytorch using [pytorch-lightning](https://github.com/PyTorchLightning/pytorch-lightning)    
-The purpose of this repo is to provide a recipe for training `VGG-like` and `ResNet18` baselines.
+(Unofficial) Implementation of [FSD50K](https://arxiv.org/pdf/2010.00475.pdf) [1] baselines for pytorch using [pytorch-lightning](https://github.com/PyTorchLightning/pytorch-lightning)    
 
 ![spectrograms](readme_images/specs_wide2.png)
 
@@ -11,6 +10,7 @@ Although AudioSet is significantly larger, their `balanced subset` which has suf
 More information on FSD50K can be found in the [paper](https://arxiv.org/pdf/2010.00475.pdf) and the [dataset page](http://doi.org/10.5281/zenodo.4060432).
 
 ## Keypoints
+* Complete recipe for training `VGG-like` and `ResNet18` baselines as given in the FSD50K paper.
 * Includes preprocessing steps following the paper's experimentation protocol, including patching methodology (*Section 5.B*)
 * Support for both spectrograms and melspectrogram features (just change "feature" under "audio_config" in cfg file)
 * *melspectrogram* setting has the *exact* parameters as given in the paper, *spectrogram* can be configured

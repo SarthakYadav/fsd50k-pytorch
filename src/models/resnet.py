@@ -1,3 +1,5 @@
+# Netvlad integration based on https://github.com/hche11/VGGSound
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
