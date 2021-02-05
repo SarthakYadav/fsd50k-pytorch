@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 from torch import nn
+from src.models import crnn
 from src.models import resnet
 from src.models import vgglike
 from src.models import densenet
@@ -15,6 +16,8 @@ from src.data.fsd_eval_dataset import FSD50kEvalDataset, _collate_fn_eval
 def model_helper(opt):
     if opt['arch'] == "vgglike":
         model = vgglike.VGGLike(opt['num_classes'])
+    elif "crnn" in opt['arch']:
+        model = crnn.CRNN(num_classes=opt['num_classes'])
     elif "densenet" in opt['arch']:
         depth = opt['model_depth']
         if depth == 121:

@@ -10,7 +10,7 @@ Although AudioSet is significantly larger, their `balanced subset` which has suf
 More information on FSD50K can be found in the [paper](https://arxiv.org/pdf/2010.00475.pdf) and the [dataset page](http://doi.org/10.5281/zenodo.4060432).
 
 ## Keypoints
-* Complete recipe for training `VGG-like` and `ResNet18` baselines as given in the FSD50K paper.
+* Objective is to provide a quick starting point for training `VGG-like`,`ResNet-18`, `CRNN` and `DenseNet-121` baselines as given in the FSD50K paper.
 * Includes preprocessing steps following the paper's experimentation protocol, including patching methodology (*Section 5.B*)
 * Support for both spectrograms and melspectrogram features (just change "feature" under "audio_config" in cfg file)
 * *melspectrogram* setting has the *exact* parameters as given in the paper, *spectrogram* can be configured
@@ -24,14 +24,20 @@ More information on FSD50K can be found in the [paper](https://arxiv.org/pdf/201
 * Per instance Zero-centering was used
 
 ## Results
-| Model | features | cfg | Official [1] <br> mAP, d' | This Repo <br> mAP, d' | Link |
+| Model | features | cfg | Official <br> mAP, d' | This repo <br> mAP, d' | Link |
 | ----- | ----- | ----- | ----- | ----- | ----- |
 |       |       |       |       |       |       |
+| CRNN | melspectrograms | crnn_chunks_melspec.cfg | 0.417, 2.068 | 0.40, 2.08 | [checkpoint](https://drive.google.com/drive/folders/1SM_WAMCzktf8wJ7EmeVQFQFK8DklTU2o?usp=sharing) |
 | ResNet-18 | melspectrograms | resnet_chunks_melspec.cfg | 0.373, 1.883 | 0.400, 1.905 | [checkpoint](https://drive.google.com/drive/folders/1kCeth1dXAGa5tGJs1sEOXyWgH5nRunFy?usp=sharing) |
 | VGG-like | melspectrograms | vgglike_chunks_melspec.cfg | 0.434, 2.167 | 0.408, 2.055 | [checkpoint](https://drive.google.com/drive/folders/16lroxqjHoc4-8sbC0y7aZrStQ7cZOs65?usp=sharing) |
 | DenseNet-121 | melspectrograms | densenet121_chunks_melspec.cfg | 0.425, 2.112 | 0.432, 2.016 | [checkpoint](https://drive.google.com/drive/folders/1TkzpBtFR6D5LNhR0bfZjV2DPPcBzKek_?usp=sharing) |
+|       |       |       |       |       |       |
 | ResNet-18 | spectrograms <br> (length=0.02 ms, stride=0.01 ms) | resnet_chunks.cfg | - | 0.420, 1.946 | [checkpoint](https://drive.google.com/drive/folders/14hOggY4N4ZDcSaCBBVCtcN6zNwvIJC7O?usp=sharing) |
 | VGG-like | spectrograms <br> (length=0.02 ms, stride=0.01 ms) | vgglike_chunks.cfg | - | 0.388, 2.021 | [checkpoint](https://drive.google.com/drive/folders/14e8B6u5Jshi4ku2IXlDdrL6cQ2bmLGbs?usp=sharing) |
+
+### Comments
+* As previously stated, ideally you'd want to run on the exact batch size and learning rates 
+  if your goal is exact reproduction. This implementation intends to be a good starting point!
 
 ## Requirements
 * `torch==1.7.1` and corresponding `torchaudio` from [official pytorch](https://pytorch.org/get-started/locally/)
