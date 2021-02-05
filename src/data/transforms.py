@@ -22,8 +22,6 @@ def spec_augment(spec: np.ndarray,
                  freq_masking=0.15,
                  time_masking=0.20,
                  value=0):
-    # spec = spec.copy()
-    # print('[spec_augment] spec type', type(spec))
     spec = spec.copy()
     num_mask = random.randint(1, num_mask)
     for i in range(num_mask):

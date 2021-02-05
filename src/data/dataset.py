@@ -22,7 +22,6 @@ class SpectrogramDataset(Dataset):
                  mixer: Optional = None,
                  transform: Optional = None) -> None:
         super(SpectrogramDataset, self).__init__()
-        # print("[SpectrogramDataset]", audio_config)
         assert os.path.isfile(labels_map)
         assert os.path.splitext(labels_map)[-1] == ".json"
         assert audio_config is not None
@@ -53,7 +52,6 @@ class SpectrogramDataset(Dataset):
         self.augment = augment
         self.min_duration = audio_config.get("min_duration", None)
         self.background_noise_path = audio_config.get("bg_files", None)
-        # print("BACKGROUNDNOISE:", self.background_noise_path)
         if self.background_noise_path is not None:
             if os.path.exists(self.background_noise_path):
                 self.bg_files = glob.glob(os.path.join(self.background_noise_path, "*.wav"))

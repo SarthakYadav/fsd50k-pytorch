@@ -55,7 +55,6 @@ class AddMixer:
             return np.random.beta(0.4, 0.4)
 
     def __call__(self, dataset, image, target):
-        # print("AddMixer called!!")
         rnd_image, rnd_target = get_random_sample(dataset)
 
         alpha = self.sample_alpha()
@@ -74,15 +73,11 @@ class SigmoidConcatMixer:
 
         step = (x_radius * 2) / size[1]
         x = torch.arange(-x_radius, x_radius, step=step).float()
-        # x = np.arange(-x_radius, x_radius, step=step)
         y = torch.sigmoid(x)
-        # print(y)
-        # mix_mask = np.tile(y, (size[0], 1))
         mix_mask = y.repeat(size[0], 1)
         return mix_mask
 
     def __call__(self, dataset, image, target):
-        # print("SigmoidConcatMixer called!!")
         rnd_image, rnd_target = get_random_sample(dataset)
 
         mix_mask = self.sample_mask(image.shape[-2:])
@@ -100,7 +95,6 @@ class RandomMixer:
         self.p = p
 
     def __call__(self, dataset, image, target):
-        # print("RandomMixer called!!")
         mixer = np.random.choice(self.mixers, p=self.p)
         image, target = mixer(dataset, image, target)
         return image, target
