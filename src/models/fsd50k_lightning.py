@@ -1,3 +1,4 @@
+import os
 import torch
 import numpy as np
 from torch import nn
@@ -5,32 +6,45 @@ from src.models import crnn
 from src.models import resnet
 from src.models import vgglike
 from src.models import densenet
+from src.models import vanilla_cifar_resnet
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 from src.data.dataset import SpectrogramDataset
 from sklearn.metrics import average_precision_score
+from src.optim.focal_loss import SigmoidFocalLoss
 from src.data.utils import _collate_fn, _collate_fn_multiclass
 from src.data.fsd_eval_dataset import FSD50kEvalDataset, _collate_fn_eval
 
 
 def model_helper(opt):
+    pretrained = opt.get("pretrained", "")
+    pretrained_fc = opt.get("pretrained_fc", None)
+    if os.path.isfile(pretrained) and pretrained_fc > 2 and type(pretrained_fc) == int:
+        pretrained_flag = True
+        num_classes = pretrained_fc
+        ckpt = torch.load(pretrained)
+        print("pretrained model {} with {} classes found.".format(pretrained, pretrained_fc))
+    else:
+        pretrained_flag = False
+        num_classes = opt['num_classes']
+
     if opt['arch'] == "vgglike":
-        model = vgglike.VGGLike(opt['num_classes'])
+        model = vgglike.VGGLike(num_classes)
     elif "crnn" in opt['arch']:
-        model = crnn.CRNN(num_classes=opt['num_classes'])
+        model = crnn.CRNN(num_classes=num_classes)
     elif "densenet" in opt['arch']:
         depth = opt['model_depth']
         if depth == 121:
-            model = densenet.densenet121(num_classes=opt['num_classes'])
+            model = densenet.densenet121(num_classes=num_classes)
         elif depth == 161:
-            model = densenet.densenet161(num_classes=opt['num_classes'])
+            model = densenet.densenet161(num_classes=num_classes)
         elif depth == 169:
-            model = densenet.densenet169(num_classes=opt['num_classes'])
+            model = densenet.densenet169(num_classes=num_classes)
         elif depth == 201:
-            model = densenet.densenet201(num_classes=opt['num_classes'])
+            model = densenet.densenet201(num_classes=num_classes)
         else:
             raise ValueError("Invalid value {} of depth for densenet arch".format(depth))
-    elif "resnet" in opt['arch']:
+    elif "resnet" == opt['arch']:
         assert opt['model_depth'] in [10, 18, 34, 50, 101, 152, 200]
         if opt['model_depth'] == 18:
             model = resnet.resnet18(
@@ -38,23 +52,53 @@ def model_helper(opt):
                 pool=opt['pool'])
             # model.load_state_dict(torch.load("resnet18_weight.pth"))
             fc_in = model.fc.in_features
-            model.fc = nn.Linear(fc_in, opt['num_classes'])
+            model.fc = nn.Linear(fc_in, num_classes)
         elif opt['model_depth'] == 34:
             model = resnet.resnet34(
-                num_classes=opt['num_classes'],
+                num_classes=num_classes,
                 pool=opt['pool'])
         elif opt['model_depth'] == 50:
             model = resnet.resnet50(
-                num_classes=opt['num_classes'],
+                num_classes=num_classes,
                 pool=opt['pool'])
         elif opt['model_depth'] == 101:
             model = resnet.resnet101(
-                num_classes=opt['num_classes'])
+                num_classes=num_classes)
         elif opt['model_depth'] == 152:
             model = resnet.resnet152(
-                num_classes=opt['num_classes'])
+                num_classes=num_classes)
+    elif "cifar_resnet" == opt['arch']:
+        depth = opt['model_depth']
+        if depth == 20:
+            model = vanilla_cifar_resnet.resnet20(num_classes=num_classes)
+        elif depth == 32:
+            model = vanilla_cifar_resnet.resnet32(num_classes=num_classes)
+        elif depth == 34:
+            model = vanilla_cifar_resnet.resnet34_custom(num_classes=num_classes)
+        elif depth == 44:
+            model = vanilla_cifar_resnet.resnet44(num_classes=num_classes)
+        elif depth == 56:
+            model = vanilla_cifar_resnet.resnet56(num_classes=num_classes)
+        elif depth == 110:
+            model = vanilla_cifar_resnet.resnet110(num_classes=num_classes)
+        else:
+            raise ValueError("Invalid value {} of depth for cifar_resnet arch".format(depth))
     else:
         raise ValueError("Unsupported value {} for opt['arch']".format(opt['arch']))
+    if pretrained_flag:
+        if "resnet" == opt['arch']:
+            fc_in = model.fc.in_features
+            print("pretrained loading: ", model.load_state_dict(ckpt))
+            model.fc = nn.Linear(fc_in, opt['num_classes'])
+        elif "densenet" == opt['arch']:
+            fc_in = model.classifier.in_features
+            print("pretrained loading: ", model.load_state_dict(ckpt))
+            model.classifier = nn.Linear(fc_in, opt['num_classes'])
+        elif "cifar_resnet" == opt['arch']:
+            fc_in = model.linear.in_features
+            print("pretrained loading: ", model.load_state_dict(ckpt))
+            model.linear = nn.Linear(fc_in, opt['num_classes'])
+    print(model)
     return model
 
 
@@ -74,13 +118,18 @@ class FSD50k_Lightning(pl.LightningModule):
             self.mode = "multiclass"
             self.collate_fn = _collate_fn_multiclass
         elif self.hparams.cfg['model']['type'] == "multilabel":
+            use_focal = self.hparams.cfg['opt'].get("focal_loss", False)
             print("Training multilabel model")
             self.mode = "multilabel"
-            if self.hparams.cw is not None:
-                cw = torch.load(self.hparams.cw)
-                self.criterion = nn.BCEWithLogitsLoss(pos_weight=cw)
+            if not use_focal:
+                if self.hparams.cw is not None:
+                    cw = torch.load(self.hparams.cw)
+                    self.criterion = nn.BCEWithLogitsLoss(pos_weight=cw)
+                else:
+                    self.criterion = nn.BCEWithLogitsLoss(self.hparams.cw)
             else:
-                self.criterion = nn.BCEWithLogitsLoss(self.hparams.cw)
+                print("Training with SigmoidFocalLoss")
+                self.criterion = SigmoidFocalLoss()
             self.collate_fn = _collate_fn
         self.train_set = None
         self.val_set = None
@@ -126,11 +175,11 @@ class FSD50k_Lightning(pl.LightningModule):
         self.val_gts.append(y.detach().cpu().numpy()[0])
         return loss
 
-    def on_validation_epoch_end(self) -> None:
+    def validation_epoch_end(self, outputs) -> None:
         val_preds = np.asarray(self.val_predictions).astype('float32')
         val_gts = np.asarray(self.val_gts).astype('int32')
         map_value = average_precision_score(val_gts, val_preds, average="macro")
-        self.log("val_mAP", torch.tensor(map_value), prog_bar=True, on_epoch=True)
+        self.log("val_mAP", torch.tensor(map_value), prog_bar=True)
         self.val_predictions = []
         self.val_gts = []
 

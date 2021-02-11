@@ -50,8 +50,7 @@ if __name__ == '__main__':
         filepath=ckpt_fd,
         verbose=True, save_top_k=-1
     )
-    # es_cb = pl.callbacks.EarlyStopping("val_loss", mode="max", verbose=True, patience=10)
-    # can't get it to work with val_mAP for now, loss should do too
+    es_cb = pl.callbacks.EarlyStopping("val_mAP", mode="max", verbose=True, patience=10)
 
     mixer = mixers.BackgroundAddMixer()
 
@@ -68,7 +67,7 @@ if __name__ == '__main__':
     trainer = pl.Trainer(gpus=args.gpus, max_epochs=args.epochs,
                          precision=precision, accelerator="dp",
                          num_sanity_val_steps=4170,
-                         callbacks=[ckpt_callback],
+                         callbacks=[ckpt_callback, es_cb],
                          resume_from_checkpoint=args.resume_from,
                          logger=TensorBoardLogger(args.log_directory))
     trainer.fit(net)
