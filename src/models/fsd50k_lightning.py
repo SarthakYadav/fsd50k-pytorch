@@ -6,7 +6,6 @@ from src.models import crnn
 from src.models import resnet
 from src.models import vgglike
 from src.models import densenet
-from src.models import vanilla_cifar_resnet
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 from src.data.dataset import SpectrogramDataset
@@ -67,22 +66,6 @@ def model_helper(opt):
         elif opt['model_depth'] == 152:
             model = resnet.resnet152(
                 num_classes=num_classes)
-    elif "cifar_resnet" == opt['arch']:
-        depth = opt['model_depth']
-        if depth == 20:
-            model = vanilla_cifar_resnet.resnet20(num_classes=num_classes)
-        elif depth == 32:
-            model = vanilla_cifar_resnet.resnet32(num_classes=num_classes)
-        elif depth == 34:
-            model = vanilla_cifar_resnet.resnet34_custom(num_classes=num_classes)
-        elif depth == 44:
-            model = vanilla_cifar_resnet.resnet44(num_classes=num_classes)
-        elif depth == 56:
-            model = vanilla_cifar_resnet.resnet56(num_classes=num_classes)
-        elif depth == 110:
-            model = vanilla_cifar_resnet.resnet110(num_classes=num_classes)
-        else:
-            raise ValueError("Invalid value {} of depth for cifar_resnet arch".format(depth))
     else:
         raise ValueError("Unsupported value {} for opt['arch']".format(opt['arch']))
     if pretrained_flag:
