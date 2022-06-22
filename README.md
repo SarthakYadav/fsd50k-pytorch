@@ -49,8 +49,8 @@ More information on FSD50K can be found in the [paper](https://arxiv.org/pdf/201
 2. Preprocessing 
     1. `multiproc_resample.py` to convert sample rate of audio files to 22050 Hz
        ```
-       python multiproc_resample.py --src_path <path_to_dev> --tgt_path <path_to_dev_22050>
-       python multiproc_resample.py --src_path <path_to_eval> --tgt_path <path_to_eval_22050>
+       python multiproc_resample.py --src_path <path_to_dev> --dst_path <path_to_dev_22050>
+       python multiproc_resample.py --src_path <path_to_eval> --dst_path <path_to_eval_22050>
        ```
     2. `chunkify_fsd50k.py` to make chunks from dev and eval files as per *Section 5.B* of the paper. One can do this on the fly as well.
         ```
